@@ -103,9 +103,9 @@ state, _ = envs.reset()
 
 while frame_idx < max_frames:
     log_probs = []
-    values = []
-    rewards = []
-    masks = []
+    values    = []
+    rewards   = []
+    masks     = []
     entropy = 0
 
     for _ in range(num_steps):
