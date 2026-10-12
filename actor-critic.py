@@ -1,8 +1,10 @@
 import math
 import random
+import argparse
 
+import numpy as np
 import gymnasium as gym
-import numpy as np 
+from gymnasium.wrappers import RecordVideo
 
 import torch
 import torch.nn as nn
@@ -11,8 +13,6 @@ import torch.nn.functional as functional
 from torch.distributions import Categorical
 
 import matplotlib.pyplot as plt 
-
-import argparse
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Train A2C on CartPole with video recording")
@@ -52,9 +52,11 @@ class ActorCritic(nn.Module):
         dist  = Categorical(probs)
         return dist, value
 
-# Helper Functions
 def test_env(vis=False):
-    eval_env = gym.make(env_name, render_mode="human") if vis else env
+    eval_env = gym.make(env_name, render_mode="rgb_array") if vis else env
+    if vis:
+        eval_env = RecordVideo(eval_env, video_folder="videos", episode_trigger=lambda e: True)
+    
     state, _ = eval_env.reset()
     done = False
     total_reward = 0
@@ -72,6 +74,7 @@ def test_env(vis=False):
         
     if vis:
         eval_env.close()
+        print("Saved evaluation video to 'videos/' folder!")
     return total_reward
 
 def compute_returns(next_value, rewards, masks, gamma=0.99):

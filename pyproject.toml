@@ -1,11 +1,9 @@
 [project]
 name = "rl-adventure-2"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "gymnasium[classic-control]>=1.4.0",
+    "gymnasium[classic-control,other]>=1.4.0",
     "matplotlib>=3.11.2",
     "numpy>=2.5.4",
     "torch>=2.14.1",
