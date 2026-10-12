@@ -12,6 +12,13 @@ from torch.distributions import Categorical
 
 import matplotlib.pyplot as plt 
 
+import argparse
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description="Train A2C on CartPole with video recording")
+parser.add_argument("--vis", action="store_true", help="Record an evaluation video of the trained agent")
+cli_args = parser.parse_args()
+
 # Use Cuda
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
@@ -46,8 +53,9 @@ class ActorCritic(nn.Module):
         return dist, value
 
 # Helper Functions
-def test_env():
-    state, _ = env.reset()
+def test_env(vis=False):
+    eval_env = gym.make(env_name, render_mode="human") if vis else env
+    state, _ = eval_env.reset()
     done = False
     total_reward = 0
     while not done:
@@ -57,10 +65,13 @@ def test_env():
         
         action = dist.sample().cpu().numpy()[0]
         
-        next_state, reward, terminated, truncated, _ = env.step(action)
+        next_state, reward, terminated, truncated, _ = eval_env.step(action)
         done = terminated or truncated
         state = next_state
         total_reward += reward
+        
+    if vis:
+        eval_env.close()
     return total_reward
 
 def compute_returns(next_value, rewards, masks, gamma=0.99):
@@ -80,7 +91,7 @@ num_steps   = 5
 model = ActorCritic(num_inputs, num_outputs, hidden_size).to(device)
 optimizer = optim.Adam(model.parameters(), lr=lr)
 
-max_frames = 20000
+max_frames = 200000
 frame_idx = 0
 test_rewards = []
 
@@ -140,5 +151,5 @@ while frame_idx < max_frames:
     optimizer.step()
 
 print("Training finished successfully!")
-final_score = test_env()
+final_score = test_env(vis=cli_args.vis)
 print(f"Final Trained Agent Reward: {final_score}")
