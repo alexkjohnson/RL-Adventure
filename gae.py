@@ -29,29 +29,28 @@ envs = gym.make_vec(env_name, num_envs=num_envs)
 env = gym.make(env_name)
 
 # Neural Network
-def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
-    nn.init.orthogonal_(layer.weight, std)
-    nn.init.constant_(layer.bias, bias_const)
-    return layer
+def init_weights(m):
+    if isinstance(m, nn.Linear):
+        nn.init.normal_(m.weight, mean=0.0, std=0.1)
+        nn.init.constant_(m.bias, 0.1)
 
 class ActorCritic(nn.Module):
-    def __init__(self, num_inputs, num_outputs, hidden_size):
+    def __init__(self, num_inputs, num_outputs, hidden_size, std=0.0):
         super().__init__()
+        
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(num_inputs, hidden_size)),
-            nn.Tanh(), # Tanh is often preferred over ReLU for continuous control
-            layer_init(nn.Linear(hidden_size, hidden_size)),
-            nn.Tanh(),
-            layer_init(nn.Linear(hidden_size, 1), std=1.0)
+            nn.Linear(num_inputs, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, 1)
         )
         self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(num_inputs, hidden_size)),
-            nn.Tanh(),
-            layer_init(nn.Linear(hidden_size, hidden_size)),
-            nn.Tanh(),
-            layer_init(nn.Linear(hidden_size, num_outputs), std=0.01) # Small std for initial actions near 0
+            nn.Linear(num_inputs, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, num_outputs),
         )
-        self.actor_logstd = nn.Parameter(torch.zeros(1, num_outputs)) # Modern parameterization for log standard deviation
+        self.actor_logstd = nn.Parameter(torch.zeros(1, num_outputs) * std)
+
+        self.apply(init_weights)
 
     def forward(self, x):
         value = self.critic(x)
